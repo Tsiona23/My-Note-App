@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <!-- ADD NOTE -->
+    <fragment
+        android:id="@+id/addNoteFragment"
+        android:name="com.example.mynoteapp.fragments.AddNoteFragment"
+        android:label="AddNoteFragment">
+
+        <action
+            android:id="@+id/action_addNoteFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
+
+    <!-- EDIT NOTE -->
+    <fragment
+        android:id="@+id/editNoteFragment"
+        android:name="com.example.mynoteapp.fragments.EditNoteFragment"
+        android:label="EditNoteFragment">
+
+        <argument
+            android:name="note"
+            app:argType="com.example.mynoteapp.model.Note" />
+
+        <action
+            android:id="@+id/action_editNoteFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
+
+    <!-- HOME -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.mynoteapp.fragments.HomeFragment"
+        android:label="HomeFragment">
+
+        <action
+            android:id="@+id/action_homeFragment_to_addNoteFragment"
+            app:destination="@id/addNoteFragment" />
+
+        <action
+            android:id="@+id/action_homeFragment_to_editNoteFragment"
+            app:destination="@id/editNoteFragment" />
+    </fragment>
+
+</navigation>
