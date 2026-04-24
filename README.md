@@ -31,7 +31,7 @@ A simple Android application for managing notes, built with modern Android devel
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/MyNoteApp.git
+  https://github.com/Tsiona23/My-Note-App.git
    ```
 2. Open the project in Android Studio.
 3. Sync the project with Gradle files.
