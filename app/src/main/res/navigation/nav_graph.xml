@@ -2,14 +2,25 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/loginFragment">
+
+    <!-- LOGIN -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.mynoteapp.fragments.LoginFragment"
+        android:label="Login" >
+        <action
+            android:id="@+id/action_loginFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
 
     <!-- ADD NOTE -->
     <fragment
         android:id="@+id/addNoteFragment"
         android:name="com.example.mynoteapp.fragments.AddNoteFragment"
-        android:label="AddNoteFragment">
-
+        android:label="Add Note">
         <action
             android:id="@+id/action_addNoteFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
@@ -19,12 +30,10 @@
     <fragment
         android:id="@+id/editNoteFragment"
         android:name="com.example.mynoteapp.fragments.EditNoteFragment"
-        android:label="EditNoteFragment">
-
+        android:label="Edit Note">
         <argument
             android:name="note"
             app:argType="com.example.mynoteapp.model.Note" />
-
         <action
             android:id="@+id/action_editNoteFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
@@ -34,15 +43,18 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.mynoteapp.fragments.HomeFragment"
-        android:label="HomeFragment">
-
+        android:label="My Notes">
         <action
             android:id="@+id/action_homeFragment_to_addNoteFragment"
             app:destination="@id/addNoteFragment" />
-
         <action
             android:id="@+id/action_homeFragment_to_editNoteFragment"
             app:destination="@id/editNoteFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
     </fragment>
 
 </navigation>

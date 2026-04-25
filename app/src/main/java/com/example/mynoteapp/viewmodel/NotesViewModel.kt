@@ -21,9 +21,13 @@ class NotesViewModel(app: Application, private val noteRepository: NoteRepositor
         viewModelScope.launch {
             noteRepository.updateNote(note)
         }
+    
     fun getAllNotes() = noteRepository.getAllNotes()
 
     fun searchNote(query: String?) =
         noteRepository.searchNote(query)
 
+    fun syncWithFirebase() = viewModelScope.launch {
+        noteRepository.syncWithFirebase()
+    }
 }

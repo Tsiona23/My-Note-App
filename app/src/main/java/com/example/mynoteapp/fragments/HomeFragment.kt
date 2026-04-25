@@ -19,6 +19,7 @@ import com.example.mynoteapp.adapter.NoteAdapter
 import com.example.mynoteapp.databinding.FragmentHomeBinding
 import com.example.mynoteapp.model.Note
 import com.example.mynoteapp.viewmodel.NotesViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 class HomeFragment : Fragment(R.layout.fragment_home), MenuProvider {
 
@@ -53,6 +54,9 @@ class HomeFragment : Fragment(R.layout.fragment_home), MenuProvider {
             findNavController()
                 .navigate(R.id.action_homeFragment_to_addNoteFragment)
         }
+
+        // Trigger sync when home fragment is loaded
+        notesViewModel.syncWithFirebase()
     }
 
     private fun setupRecyclerView() {
@@ -120,7 +124,18 @@ class HomeFragment : Fragment(R.layout.fragment_home), MenuProvider {
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        return false
+        return when (menuItem.itemId) {
+            R.id.logoutMenu -> {
+                logout()
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun logout() {
+        FirebaseAuth.getInstance().signOut()
+        findNavController().navigate(R.id.action_homeFragment_to_loginFragment)
     }
 
     override fun onDestroyView() {

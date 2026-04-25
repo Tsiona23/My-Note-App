@@ -13,6 +13,7 @@ import com.example.mynoteapp.R
 import com.example.mynoteapp.databinding.FragmentAddNoteBinding
 import com.example.mynoteapp.model.Note
 import com.example.mynoteapp.viewmodel.NotesViewModel
+import java.util.UUID
 
 class AddNoteFragment : Fragment(R.layout.fragment_add_note), MenuProvider {
 
@@ -35,10 +36,27 @@ class AddNoteFragment : Fragment(R.layout.fragment_add_note), MenuProvider {
         val menuHost: MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-
         binding.saveButton.setOnClickListener {
             saveNote()
         }
+
+        // --- TEMPLATES LOGIC ---
+        binding.templateToDot.setOnClickListener {
+            applyTemplate("To-Do List", "• Task 1\n• Task 2\n• Task 3")
+        }
+
+        binding.templateMeeting.setOnClickListener {
+            applyTemplate("Meeting Notes", "Date: \nAttendees: \n\nAgenda:\n- \n\nAction Items:\n- ")
+        }
+
+        binding.templateIdea.setOnClickListener {
+            applyTemplate("New Idea", "Concept: \n\nDetails: \n\nNext Steps: ")
+        }
+    }
+
+    private fun applyTemplate(title: String, desc: String) {
+        binding.addNoteTitle.setText(title)
+        binding.addNoteDesc.setText(desc)
     }
 
     private fun saveNote() {
@@ -51,16 +69,13 @@ class AddNoteFragment : Fragment(R.layout.fragment_add_note), MenuProvider {
         }
 
         val note = Note(
-            id = 0,
+            id = UUID.randomUUID().toString(),
             noteTitle = title,
             noteDesc = desc
         )
 
         notesViewModel.addNote(note)
-
         Toast.makeText(requireContext(), "Note Saved", Toast.LENGTH_SHORT).show()
-
-
         findNavController().navigate(R.id.action_addNoteFragment_to_homeFragment)
     }
 

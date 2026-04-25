@@ -1,16 +1,12 @@
 package com.example.mynoteapp.database
 
 import android.content.Context
-import androidx.annotation.UiContext
 import androidx.room.Database
 import androidx.room.Room
-import androidx.room.Room.databaseBuilder
 import androidx.room.RoomDatabase
 import com.example.mynoteapp.model.Note
-import kotlinx.coroutines.internal.SynchronizedObject
-import java.util.concurrent.locks.Lock
 
-@Database(entities = [Note::class], version = 1)
+@Database(entities = [Note::class], version = 2, exportSchema = false)
 abstract class NoteDatabase: RoomDatabase() {
     abstract fun getNoteDao(): NoteDao
 
@@ -18,18 +14,21 @@ abstract class NoteDatabase: RoomDatabase() {
         @Volatile
         private var instance: NoteDatabase? = null
         private val Lock = Any()
+
         operator fun invoke(context: Context) = instance ?:
         synchronized(Lock){
             instance ?:
-            createDtabase(context).also{
+            createDatabase(context).also{
                 instance = it
             }
         }
-        private fun createDtabase(context: Context) =
-            databaseBuilder(
+
+        private fun createDatabase(context: Context) =
+            Room.databaseBuilder(
                 context.applicationContext,
                 NoteDatabase::class.java,
                 "note_db"
-            ).build()
+            ).fallbackToDestructiveMigration()
+            .build()
     }
 }
