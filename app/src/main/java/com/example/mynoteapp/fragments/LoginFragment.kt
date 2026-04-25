@@ -16,6 +16,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 
 class LoginFragment : Fragment() {
 
@@ -38,12 +40,10 @@ class LoginFragment : Fragment() {
 
         auth = FirebaseAuth.getInstance()
 
-        // Auto-login if user is already signed in
         if (auth.currentUser != null) {
             findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
         }
 
-        // Configure Google Sign-In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
@@ -51,17 +51,24 @@ class LoginFragment : Fragment() {
 
         googleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
 
-        // Email/Password Login
+        // EMAIL/PASSWORD SIGN IN
         binding.btnLogin.setOnClickListener {
-            val email = binding.etEmail.text.toString()
-            val password = binding.etPassword.text.toString()
+            val email = binding.etEmail.text.toString().trim()
+            val password = binding.etPassword.text.toString().trim()
+
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 auth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
                         } else {
-                            Toast.makeText(context, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                            val exception = task.exception
+                            val message = when (exception) {
+                                is FirebaseAuthInvalidUserException -> "No account found with this email. Please 'Sign Up' first."
+                                is FirebaseAuthInvalidCredentialsException -> "Incorrect password or email. If you usually use Google, please use 'Continue with Google'."
+                                else -> "Login failed: ${exception?.localizedMessage}"
+                            }
+                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                         }
                     }
             } else {
@@ -69,18 +76,24 @@ class LoginFragment : Fragment() {
             }
         }
 
-        // Email/Password SignUp
+        // EMAIL/PASSWORD SIGN UP (Create Account)
         binding.btnSignUp.setOnClickListener {
-            val email = binding.etEmail.text.toString()
-            val password = binding.etPassword.text.toString()
+            val email = binding.etEmail.text.toString().trim()
+            val password = binding.etPassword.text.toString().trim()
+
             if (email.isNotEmpty() && password.isNotEmpty()) {
+                if (password.length < 6) {
+                    Toast.makeText(context, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            Toast.makeText(context, "Account created!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Account created! You can now Sign In with this password.", Toast.LENGTH_SHORT).show()
                             findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
                         } else {
-                            Toast.makeText(context, "Sign up failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Sign up failed: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
                     }
             } else {
@@ -88,7 +101,6 @@ class LoginFragment : Fragment() {
             }
         }
 
-        // Google Sign-In Button
         binding.btnGoogleSignin.setOnClickListener {
             signIn()
         }
@@ -108,7 +120,7 @@ class LoginFragment : Fragment() {
                 val account = task.getResult(ApiException::class.java)!!
                 firebaseAuthWithGoogle(account.idToken!!)
             } catch (e: ApiException) {
-                Toast.makeText(context, "Google sign in failed: status code ${e.statusCode}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Google failed: status ${e.statusCode}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -120,7 +132,7 @@ class LoginFragment : Fragment() {
                 if (task.isSuccessful) {
                     findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
                 } else {
-                    Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Google Auth failed.", Toast.LENGTH_SHORT).show()
                 }
             }
     }

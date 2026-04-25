@@ -54,9 +54,6 @@ class HomeFragment : Fragment(R.layout.fragment_home), MenuProvider {
             findNavController()
                 .navigate(R.id.action_homeFragment_to_addNoteFragment)
         }
-
-        // Trigger sync when home fragment is loaded
-        notesViewModel.syncWithFirebase()
     }
 
     private fun setupRecyclerView() {
@@ -76,8 +73,8 @@ class HomeFragment : Fragment(R.layout.fragment_home), MenuProvider {
             findNavController().navigate(action)
         }
 
-        // ✅ LOAD NOTES
-        notesViewModel.getAllNotes().observe(viewLifecycleOwner) { notes ->
+        // ✅ LOAD NOTES - Updated to use the 'notes' LiveData from ViewModel
+        notesViewModel.notes.observe(viewLifecycleOwner) { notes ->
             noteAdapter.differ.submitList(notes)
             updateUI(notes)
         }

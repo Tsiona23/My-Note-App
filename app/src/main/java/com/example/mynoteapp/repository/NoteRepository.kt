@@ -1,10 +1,15 @@
 package com.example.mynoteapp.repository
 
+import android.util.Log
 import com.example.mynoteapp.database.NoteDatabase
 import com.example.mynoteapp.model.Note
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class NoteRepository(private val db: NoteDatabase) {
@@ -12,6 +17,7 @@ class NoteRepository(private val db: NoteDatabase) {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val notesCollection = firestore.collection("notes")
+    private var syncListener: ListenerRegistration? = null
 
     private fun getUserId(): String? = auth.currentUser?.uid
 
@@ -19,26 +25,21 @@ class NoteRepository(private val db: NoteDatabase) {
         val userId = getUserId() ?: return
         val noteWithUser = note.copy(userId = userId)
         
-        // 1. Save locally
         db.getNoteDao().insertNote(noteWithUser)
         
-        // 2. Sync to Firebase
         try {
             notesCollection.document(noteWithUser.id).set(noteWithUser, SetOptions.merge()).await()
         } catch (e: Exception) {
-            // Firestore handles offline persistence automatically if enabled
+            Log.e("NoteRepository", "Error syncing note: ${e.message}")
         }
     }
 
     suspend fun deleteNote(note: Note) {
-        // 1. Delete locally
         db.getNoteDao().deleteNote(note)
-        
-        // 2. Delete from Firebase
         try {
             notesCollection.document(note.id).delete().await()
         } catch (e: Exception) {
-            // Handle error
+            Log.e("NoteRepository", "Error deleting note: ${e.message}")
         }
     }
 
@@ -46,31 +47,44 @@ class NoteRepository(private val db: NoteDatabase) {
         val userId = getUserId() ?: return
         val noteWithUser = note.copy(userId = userId)
 
-        // 1. Update locally
         db.getNoteDao().updateNote(noteWithUser)
         
-        // 2. Update Firebase
         try {
             notesCollection.document(noteWithUser.id).set(noteWithUser, SetOptions.merge()).await()
         } catch (e: Exception) {
-            // Handle error
+            Log.e("NoteRepository", "Error updating note: ${e.message}")
         }
     }
 
-    fun getAllNotes() = db.getNoteDao().getAllNotes(getUserId() ?: "")
+    fun getAllNotes(userId: String) = db.getNoteDao().getAllNotes(userId)
 
-    fun searchNote(query: String?) = db.getNoteDao().searchNote(getUserId() ?: "", query)
+    fun searchNote(userId: String, query: String?) = db.getNoteDao().searchNote(userId, query)
 
-    suspend fun syncWithFirebase() {
-        val userId = getUserId() ?: return
-        try {
-            val snapshot = notesCollection.whereEqualTo("userId", userId).get().await()
-            val remoteNotes = snapshot.toObjects(Note::class.java)
-            for (note in remoteNotes) {
-                db.getNoteDao().insertNote(note)
+    // ✅ Start real-time sync for a specific user
+    fun startRealTimeSync(userId: String) {
+        // Remove existing listener if any to avoid duplicates or leaks
+        syncListener?.remove()
+
+        syncListener = notesCollection.whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("NoteRepository", "Firestore Listen failed.", error)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val remoteNotes = snapshot.toObjects(Note::class.java)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        for (note in remoteNotes) {
+                            db.getNoteDao().insertNote(note)
+                        }
+                    }
+                }
             }
-        } catch (e: Exception) {
-            // Handle error
-        }
+    }
+
+    fun stopRealTimeSync() {
+        syncListener?.remove()
+        syncListener = null
     }
 }
